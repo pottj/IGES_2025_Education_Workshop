@@ -1,0 +1,212 @@
+---
+title: "IGES CrossBiobank Practical Tutorial"
+author: "Dr. Xihao Li and Dr. Jacob Williams
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    theme: flatly    # from the `bslib` themes
+    highlight: tango # syntax highlighting style
+    df_print: paged
+    number_sections: true
+    code_folding: show
+date: "2025-08-31"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "/data/williamsjacr/IGES_2025_Education_Workshop/data/")
+```
+
+## Prerequisites 
+
+The following packages are used throughout this tutorial
+
+```{r packages, eval = FALSE}
+install.packages("devtools")
+install.packages("Matrix")
+install.packages("BiocManager")
+install.packages('restfulr')
+install.packages('logistf')
+install.packages('GMMAT')
+install.packages("remotes")
+install.packages("dplyr")
+
+BiocManager::install('S4Vectors')
+BiocManager::install('gdsfmt')
+BiocManager::install('SeqArray')
+BiocManager::install('SeqVarTools')
+BiocManager::install('GENESIS')
+BiocManager::install('GenomicFeatures')
+BiocManager::install('TxDb.Hsapiens.UCSC.hg38.knownGene')
+
+devtools::install_github('xihaoli/STAAR')
+devtools::install_github('zilinli1988/SCANG')
+devtools::install_github('xihaoli/MultiSTAAR',ref='main')
+devtools::install_github('xihaoli/STAARpipeline',ref='main')
+devtools::install_github('xihaoli/STAARpipelineSummary',ref='main')
+devtools::install_github('xihaoli/MetaSTAAR',ref='main')
+devtools::install_github("li-lab-genetics/MetaSTAARlite",ref="main")
+
+remotes::install_github("privefl/bigsnpr")
+```
+
+The data used for this tutorial is available at 
+
+```{r data dowload, message=FALSE,warning=FALSE}
+
+```
+
+Set working directory if running interactively
+
+```{r data dowload, message=FALSE,warning=FALSE}
+working_dir <- "/data/williamsjacr/IGES_2025_Education_Workshop/data/"
+```
+
+## Common Variant PRS using bigsnpr
+
+Polygenic risk scores are commonly built using publicly available GWAS summary statistics from large scale biobanks or consortiums. With these summary statistics and some estimate of the linkage disequilibrium matrix, we can produce polygenic risk scores with most existing methods. However, to apply these summary statistics or polygenic risk scores, we must align them with our target data. 
+
+In the example below, we have a target dataset (G `chr19.bed` and Y `Phenotype_CommonVariant.csv`) and publicly available summary statistics or polygenic risk scores (`SumStats_Biobank.csv`). Our goal is to use these estimated coefficients successfully on our target dataset. 
+
+```{r common variant data,message = FALSE,warning = FALSE}
+## Set up environment and load the data. 
+
+library(bigsnpr)
+library(dplyr)
+
+setwd(working_dir)
+
+## create a rds file and bk file with bigsnpr, allows us to perform PRS calculations without plink.
+if(file.exists("chr19.rds")){
+  file.remove("chr19.rds")
+  file.remove("chr19.bk") 
+}
+bigsnpr::snp_readBed("chr19.bed")
+
+## Read the external summary statistics
+SumStats_Biobank <- read.csv("SumStats_Biobank.csv")
+
+## read the target data trait of interest
+Phenotype_CommonVariant <- read.csv("Phenotype_CommonVariant.csv")
+
+## Read the bim file
+chr19_bim <- read.delim("chr19.bim", header=FALSE)
+
+## attach the bigsnpr data object
+obj.bigSNP <- bigsnpr::snp_attach("chr19.rds")
+G <- obj.bigSNP$genotypes   # genotype matrix
+```
+
+Examine the structure of both the bim file and the summary statistics to see how they compare 
+
+```{r str common variant files}
+str(SumStats_Biobank)
+str(chr19_bim)
+```
+
+The bim file has SNP IDs in the notation CHR:POS:A1:A2 while the summary statistics use rsIDs. If we took the summary statistics as they were and used them in plink, this would fail as the IDs would not match. Therefore we must align IDs of the summary statistics with the target data. Two ways to do this 1) modify the summary statistics or 2) modify the target data genotype file. We will use the first method, as we do not have access to plink in this demo.
+
+```{r merge data, message=FALSE, warning = FALSE}
+## Use the bim file to generate a NULL summary statistics file
+## here we are assuming that the alternative allele and reference allele are the same as what is provided in the bim file. In practice this is often not the case and better to use plink to compute it.
+sumstats <- data.frame(SNP = chr19_bim[,2],pos = chr19_bim[,4], ref = chr19_bim[,5], alt = chr19_bim[,6], beta = 0)
+
+## first add chr and pos
+setwd(working_dir)
+SNPinfo <- read.csv("SNPInfo_GrCH38.csv")
+SNPinfo <- data.frame(rsid = SNPinfo$rsid,chr = SNPinfo$chr, pos = SNPinfo$pos38)
+
+SumStats_Biobank <- left_join(SumStats_Biobank,SNPinfo, by = c("RSID" = "rsid"))
+
+## Next create a unique id to merge the null file and the biobank sumstats
+sumstats$unique_id <- paste0(19,"_",sumstats$pos,"_",sumstats$ref,"_",sumstats$alt)
+SumStats_Biobank$unique_id1 <- paste0(19,"_",SumStats_Biobank$pos,"_",SumStats_Biobank$REF,"_",SumStats_Biobank$ALT)
+SumStats_Biobank$unique_id2 <- paste0(19,"_",SumStats_Biobank$pos,"_",SumStats_Biobank$ALT,"_",SumStats_Biobank$REF)
+
+## Merge by the unique CHR_POS_A0_A1 ID to add the estimated coefficients to our NULL file
+sumstats <- left_join(sumstats,SumStats_Biobank[,c("unique_id1","BETA")],by = c("unique_id" = "unique_id1"))
+sumstats$beta[!is.na(sumstats$BETA)] <- sumstats$BETA[!is.na(sumstats$BETA)]
+sumstats <- subset(sumstats,select = -c(BETA))
+sumstats <- left_join(sumstats,SumStats_Biobank[,c("unique_id2","BETA")],by = c("unique_id" = "unique_id2"))
+sumstats$beta[!is.na(sumstats$BETA)] <- sumstats$BETA[!is.na(sumstats$BETA)]
+sumstats <- subset(sumstats,select = -c(BETA))
+
+str(sumstats)
+```
+
+The new summary statistics now have the same IDs as the bim file. Therefore we can now calculate a PRS.
+
+```{r incorrect PRS, warning=FALSE,message = FALSE}
+## Calculate the PRS
+Test <- big_prodVec(G, sumstats$beta)
+all.equal(Test,Phenotype_CommonVariant$Y)
+cor(Test,Phenotype_CommonVariant$Y)
+```
+
+However, this PRS is not correct. When we merged the IDs from the we did not properly account for the reference/alternative allele differences between our target data and the summary statistics. When an estimated coefficient for a given SNP has been computed with flipped alleles compared to the target dataset, the estimated coefficient should be flipped (i.e. (-1 x)).
+
+```{r correct PRS,warning=FALSE,message=FALSE}
+## However, the PRS above did not account for the mismatched alleles, if the reference allele is different (target data vs training data) we also have to flip beta's
+sumstats$beta[sumstats$unique_id %in% SumStats_Biobank$unique_id2] <- (-1)*sumstats$beta[sumstats$unique_id %in% SumStats_Biobank$unique_id2]
+
+## This improves are accuracy with our response
+Test <- big_prodVec(G, sumstats$beta)
+all.equal(Test,Phenotype_CommonVariant$Y)
+cor(Test,Phenotype_CommonVariant$Y)
+```
+
+After flipping the alleles we now have a more accurate PRS.
+
+## Common Variant Meta-analysis using METAL
+
+Another common tasks that is conducted with cross-biobank analyses are meta-analyses. Here we illustrate how to set up a GWAS meta-analysis using METAL. First we set up the data.
+
+```{r METAL Analysis Prep,warning=FALSE,message=FALSE}
+setwd(working_dir)
+
+SumStats_Biobank1 <- read.csv("SumStats_Biobank.csv")
+
+SNPinfo <- read.csv("SNPInfo_GrCH38.csv")
+SNPinfo <- data.frame(rsid = SNPinfo$rsid,chr = SNPinfo$chr, pos = SNPinfo$pos38)
+SumStats_Biobank1 <- left_join(SumStats_Biobank1,SNPinfo, by = c("RSID" = "rsid"))
+
+SumStats_Biobank1 <- data.frame(SNP = SumStats_Biobank1$RSID, CHR = SumStats_Biobank1$chr, BP = SumStats_Biobank1$pos, 
+                                EA = SumStats_Biobank1$ALT,NEA = SumStats_Biobank1$REF, BETA = SumStats_Biobank1$BETA,
+                                SE = SumStats_Biobank1$SE, P = SumStats_Biobank1$PVAL, N = SumStats_Biobank1$N)
+
+SumStats_Biobank2 <- SumStats_Biobank1[sample(1:nrow(SumStats_Biobank1),round(0.8*nrow(SumStats_Biobank1))),]
+
+write.table(SumStats_Biobank1,file = "SumStats_Biobank1.txt",sep = "\t",quote = FALSE,row.names = FALSE)
+write.table(SumStats_Biobank2,file = "SumStats_Biobank2.txt",sep = "\t",quote = FALSE,row.names = FALSE)
+```
+
+The summary statistics must contain the same ID naming across the two files, if not METAL will fail. But unlike the PRS calculation, alleles do not have to be matched before as METAL will do that automatically. However, it is good practice to be aware what the software is doing to align alleles and handle strand flipping. Below then is example code to run METAL.
+
+```{r,METAL Analysis Prep,warning=FALSE,message=FALSE}
+setwd(working_dir)
+
+metal_script <- c(
+  "SCHEME STDERR",
+  "MARKER SNP",
+  "ALLELE EA NEA",
+  "EFFECT BETA",
+  "STDERR SE",
+  "PVAL P",
+  "WEIGHT N",
+  "",
+  "PROCESS SumStats_Biobank1.txt",
+  "PROCESS SumStats_Biobank2.txt",
+  "",
+  "OUTFILE meta_results_ .tbl",
+  "ANALYZE"
+)
+
+writeLines(metal_script, "metal_script.txt")
+
+# system("./metal metal_script.txt")
+```
+

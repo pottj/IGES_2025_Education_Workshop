@@ -1,6 +1,6 @@
 ---
 title: "IGES CrossBiobank Practical Tutorial"
-author: "Dr. Xihao Li and Dr. Jacob Williams
+author: "Dr. Xihao Li and Dr. Jacob Williams"
 output:
   html_document:
     toc: true
@@ -54,20 +54,25 @@ devtools::install_github("li-lab-genetics/MetaSTAARlite",ref="main")
 remotes::install_github("privefl/bigsnpr")
 ```
 
-Set working directory if running interactively
-
 ```{r working directory,message=FALSE,warning=FALSE}
-working_dir <- "/data/williamsjacr/IGES_2025_Education_Workshop/data/"
+working_dir <- "/data/williamsjacr/"
 ```
 
 The data used for this tutorial is available at 
 
 ```{r data dowload, message=FALSE,warning=FALSE, eval = FALSE}
 # Set working directory if running interactively
-download.file(url = "https://dataverse.harvard.edu/api/access/datafile/11912216",
+download.file(url = "https://dataverse.harvard.edu/api/access/datafile/11912614",
               destfile = paste0(working_dir,"IGES_2025.tar.gz"))
 
 system(paste0("tar -xzvf ",working_dir,"IGES_2025.tar.gz -C",working_dir))
+working_dir <- paste0(working_dir,"IGES_2025_Education_Workshop/data/")
+```
+
+Update working directory
+
+```{r working directory update,message=FALSE,warning=FALSE}
+working_dir <- paste0(working_dir,"IGES_2025_Education_Workshop/data/")
 ```
 
 ## Common Variant PRS using bigsnpr
@@ -190,7 +195,7 @@ write.table(SumStats_Biobank2,file = "SumStats_Biobank2.txt",sep = "\t",quote = 
 
 The summary statistics must contain the same ID naming across the two files, if not METAL will fail. But unlike the PRS calculation, alleles do not have to be matched before as METAL will do that automatically. However, it is good practice to be aware what the software is doing to align alleles and handle strand flipping. Below then is example code to run METAL.
 
-```{r,METAL Analysis Prep,warning=FALSE,message=FALSE}
+```{r,METAL Analysis,warning=FALSE,message=FALSE}
 setwd(working_dir)
 
 metal_script <- c(

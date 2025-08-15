@@ -54,16 +54,20 @@ devtools::install_github("li-lab-genetics/MetaSTAARlite",ref="main")
 remotes::install_github("privefl/bigsnpr")
 ```
 
-The data used for this tutorial is available at 
-
-```{r data dowload, message=FALSE,warning=FALSE}
-
-```
-
 Set working directory if running interactively
 
-```{r data dowload, message=FALSE,warning=FALSE}
+```{r working directory,message=FALSE,warning=FALSE}
 working_dir <- "/data/williamsjacr/IGES_2025_Education_Workshop/data/"
+```
+
+The data used for this tutorial is available at 
+
+```{r data dowload, message=FALSE,warning=FALSE, eval = FALSE}
+# Set working directory if running interactively
+download.file(url = "https://dataverse.harvard.edu/api/access/datafile/11912216",
+              destfile = paste0(working_dir,"IGES_2025.tar.gz"))
+
+system(paste0("tar -xzvf ",working_dir,"IGES_2025.tar.gz -C",working_dir))
 ```
 
 ## Common Variant PRS using bigsnpr

@@ -38,9 +38,8 @@ remotes::install_github("privefl/bigsnpr")
 The data used for this tutorial is available at https://dataverse.harvard.edu/api/access/datafile/11912216 
 
 ```R
-working_dir <- "/data/williamsjacr/IGES_2025_Education_Workshop/data/"
 download.file(url = "https://dataverse.harvard.edu/api/access/datafile/11912216",
-              destfile = paste0(working_dir,"IGES_2025.tar.gz"))
+              destfile = "")
 ```
 
 ## License

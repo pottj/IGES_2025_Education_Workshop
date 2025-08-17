@@ -1,7 +1,11 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 # IGES 2025 Cross Biobank Practical Tutorials
-This repository contains code used for the tutorial (IGES_CrossBioBank_PracticalTutorial.Rmd) as well as scripts used to create the data and test analyses used in the tutorial (scripts).
+This repository contains code used for the tutorial (`IGES_CrossBioBank_PracticalTutorial.Rmd`) as well as scripts used to create the data and test analyses used in the tutorial (`scripts/``).
+
+- All the source data are publicly available;
+- All the source code are open-access;
+- All the analysis results are reproducible.
 
 ## Prerequisites
 The packages used in the tutorial include: 
@@ -42,6 +46,9 @@ This contains a tar.gz file with data used in the IGES 2025 Cross Biobank Practi
 download.file(url = "https://dataverse.harvard.edu/api/access/datafile/11912614",
               destfile = "")
 ```
+
+## Tutorial Vignette
+Please see the <a href="https://htmlpreview.github.io/?https://github.com/li-lab-genetics/IGES_2025_Education_Workshop/blob/main/IGES_CrossBioBank_PracticalTutorial.html">**IGES Cross Biobank Practical Tutorial**</a> for a step-by-step tutorial of the 2025 IGES Education Workshop.
 
 ## License
 This software is licensed under GPLv3.

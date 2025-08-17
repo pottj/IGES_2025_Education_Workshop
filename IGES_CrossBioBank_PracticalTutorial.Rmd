@@ -18,7 +18,7 @@ date: "2025-08-31"
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_knit$set(root.dir = "/data/williamsjacr/IGES_2025_Education_Workshop/data/")
+knitr::opts_knit$set(root.dir = "~/Downloads/IGES_2025_Education_Workshop/data/")
 ```
 
 ## Prerequisites 
@@ -55,7 +55,7 @@ remotes::install_github("privefl/bigsnpr")
 ```
 
 ```{r working directory,message=FALSE,warning=FALSE}
-working_dir <- "/data/williamsjacr/"
+working_dir <- "~/Downloads/"
 ```
 
 The data used for this tutorial is available at 
@@ -189,13 +189,17 @@ setwd(working_dir)
 SumStats_Biobank1 <- read.csv("SumStats_Biobank.csv")
 
 SNPinfo <- read.csv("SNPInfo_GrCH38.csv")
-SNPinfo <- data.frame(rsid = SNPinfo$rsid,chr = SNPinfo$chr, pos = SNPinfo$pos38)
+SNPinfo <- data.frame(rsid = SNPinfo$rsid, chr = SNPinfo$chr, pos = SNPinfo$pos38)
 SumStats_Biobank1 <- left_join(SumStats_Biobank1,SNPinfo, by = c("RSID" = "rsid"))
 
-SumStats_Biobank1 <- data.frame(SNP = SumStats_Biobank1$RSID, CHR = SumStats_Biobank1$chr, 
-                                BP = SumStats_Biobank1$pos, EA = SumStats_Biobank1$ALT,
-                                NEA = SumStats_Biobank1$REF, BETA = SumStats_Biobank1$BETA,
-                                SE = SumStats_Biobank1$SE, P = SumStats_Biobank1$PVAL,
+SumStats_Biobank1 <- data.frame(SNP = SumStats_Biobank1$RSID,
+                                CHR = SumStats_Biobank1$chr, 
+                                BP = SumStats_Biobank1$pos,
+                                EA = SumStats_Biobank1$ALT,
+                                NEA = SumStats_Biobank1$REF,
+                                BETA = SumStats_Biobank1$BETA,
+                                SE = SumStats_Biobank1$SE,
+                                P = SumStats_Biobank1$PVAL,
                                 N = SumStats_Biobank1$N)
 
 SumStats_Biobank2 <- SumStats_Biobank1[sample(1:nrow(SumStats_Biobank1),
@@ -233,9 +237,14 @@ writeLines(metal_script, "metal_script.txt")
 # system("./metal metal_script.txt")
 ```
 
-## Rare Variant Association Analysis
+## Rare Variant Association Analysis using STAARpipeline
 
-The next example we discuss is rare variant association testing using STAARpipeline. First, we illustrate how to set up an annotated GDS using chromosome 19 of the 1000G data (downloadable at https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/working/20220422_3202_phased_SNV_INDEL_SV/) to be used in STAARpipeline.   
+![STAARpipeline workflow](STAARpipeline_workflow.jpg)
+
+### aGDS File Generation
+The next example we discuss is rare variant association testing using STAARpipeline (https://doi.org/10.1038/s41592-022-01640-x). To do this, we utilize the annotated Genomic Data Structure (aGDS) format. The SeqArray GDS format is designed as a storage-efficient high-performance data format for WGS variant calls, utilizing a hierarchical structure to support efficient data access and seamless integration with several analytical pipelines. The aGDS format further extends the capabilities of SeqArray GDS by incorporating multi-faceted variant annotations to facilitate functionally-informed downstream analysis within an all-in-one file (see https://doi.org/10.1101/2025.01.27.25321225 for more details about aGDS format).
+
+First, we illustrate how to create a SeqArray GDS file using chromosome 19 of the 1000G WGS VCF file (downloadable at https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/working/20220422_3202_phased_SNV_INDEL_SV/) to be used in STAARpipeline.   
 
 ```{r,Rare Variant GDS Prep,warning=FALSE,message=FALSE,eval=FALSE}
 ### Setup repository
@@ -263,16 +272,16 @@ h <- seqVCF_Header(vcf.fn)
 # h$info
 h$info$Number[h$info$ID=="SOURCE"] <- "."
 
-# ETA: 10 minutes
+# ETA: 10 minutes (one-time conversion)
 seqVCF2GDS(vcf.fn, out.fn, header = h, genotype.var.name = "GT", info.import=NULL, fmt.import=NULL, 
            ignore.chr.prefix="chr", raise.error=TRUE, verbose=TRUE)
+```
 
-### Functionally annotate 1000G WGS Data GDS files to annotated GDS (aGDS) files
-### using FAVOR database (https://favor.genohub.org/) and FAVORannotator
-### The following scripts are used for the favorannotator app in DNAnexus
-### There is also offline scripts for favorannotator available for use:
-### (https://github.com/xihaoli/STAARpipeline-Tutorial#generate-annotated-gds-agds-file-using-favorannotator)
+Next, we functionally annotate the 1000G WGS GDS file to an aGDS file for
+chromosome 19 using the FAVOR database (https://favor.genohub.org/) and FAVORannotator. Note that the following scripts are used for the favorannotator app in the DNAnexus platform (https://github.com/li-lab-genetics/favorannotator-rap). There are also offline scripts for favorannotator ready for use, available at
+https://github.com/xihaoli/STAARpipeline-Tutorial#generate-annotated-gds-agds-file-using-favorannotator.
 
+```{r,Rare Variant aGDS Prep,warning=FALSE,message=FALSE,eval=FALSE}
 # Upload 1000G WGS GDS files to DNAnexus RAP Cloud (Drag the files)
 
 #-------------------------------------------------------------------
@@ -309,7 +318,7 @@ dx run UKB_PRS:/favorannotator \
 --destination=UKB_PRS:/IGES_2025_Education_Workshop/1000G/aGDS --yes
 #-------------------------------------------------------------------
 
-### Adds QC_label with all "PASS" to a post-QC GDS file
+### Adds QC_label with all "PASS" to a post-QC aGDS file (R scripts)
 gds.path <- "1kGP_high_coverage_Illumina.chr19.filtered.SNV_INDEL_SV_phased_panel_annotated.gds"
 genofile <- seqOpen(gds.path, readonly = FALSE)
 #genofile
@@ -321,7 +330,8 @@ add.gdsn(Anno.folder, "QC_label", val=factor(rep("PASS", length(position))), com
 seqClose(genofile)
 ```
 
-Once the annotated GDS file is created we are now able to conduct rare variant association testing with STAARpipeline. Here both the putative loss of function and disruptive missense variants in LDLR and the enhancer DHS variants in APOE are causally associated with our simulated outcome.
+### STAARpipeline Set-Up
+Once the aGDS file is created we are now able to conduct functionally-informed rare variant association testing with STAARpipeline. Here we simulate a phenotype (column `Y` in the `data/phenotype_LDLR_coding_APOE_noncoding.csv` file) where both the putative loss of function and disruptive missense (`plof_ds`) rare variants in *LDLR* and the enhancer overlaid with DNase I hypersensitivity sites (`enhancer_DHS`) rare variants in *APOE* are causally associated with our simulated phenotype (see the scripts `scripts/Tutorial_scripts_part2.2_Example_Simulated_Phenotype.R` for simulating the phenotype).
 
 ```{r,Rare Variant Association Testing,warning=FALSE,message=FALSE}
 ### Setup repository
@@ -335,7 +345,7 @@ library(STAAR)
 library(STAARpipeline)
 library(STAARpipelineSummary)
 
-## gds file
+## agds file
 agds_dir <- "1kGP_high_coverage_Illumina.chr19.filtered.SNV_INDEL_SV_phased_panel_annotated.gds"
 ## Annotation_dir
 Annotation_dir <- "annotation/info/FunctionalAnnotation"
@@ -354,24 +364,48 @@ genes <- genes_info
 pheno_cov <- read.table("integrated_call_samples_v3.20130502.ALL.panel",header=TRUE)
 phenotype.id <- as.vector(pheno_cov$sample)
 length(phenotype.id)
-# [1] 2504
 
 ## Use_annotation_weights
 Use_annotation_weights <- TRUE
 ## Annotation name (for variant weighting using the STAAR method)
-Annotation_name <- c("CADD","LINSIGHT","FATHMM.XF","aPC.EpigeneticActive","aPC.EpigeneticRepressed","aPC.EpigeneticTranscription",
-                     "aPC.Conservation","aPC.LocalDiversity","aPC.Mappability","aPC.TF","aPC.Protein")
+Annotation_name <- c("CADD",
+                     "LINSIGHT",
+                     "FATHMM.XF",
+                     "aPC.EpigeneticActive",
+                     "aPC.EpigeneticRepressed",
+                     "aPC.EpigeneticTranscription",
+                     "aPC.Conservation",
+                     "aPC.LocalDiversity",
+                     "aPC.Mappability",
+                     "aPC.TF",
+                     "aPC.Protein")
 ## Annotation name (for variants info in summary)
-Annotation_name_info <- c("rs_num","GENCODE.Category","GENCODE.Info","GENCODE.EXONIC.Category",
-                          "MetaSVM","GeneHancer","CAGE","DHS","CADD","LINSIGHT","FATHMM.XF",
-                          "aPC.EpigeneticActive","aPC.EpigeneticRepressed","aPC.EpigeneticTranscription",
-                          "aPC.Conservation","aPC.LocalDiversity","aPC.Mappability","aPC.TF","aPC.Protein")
+Annotation_name_info <- c("rs_num",
+                          "GENCODE.Category",
+                          "GENCODE.Info",
+                          "GENCODE.EXONIC.Category",
+                          "MetaSVM",
+                          "GeneHancer",
+                          "CAGE",
+                          "DHS",
+                          "CADD",
+                          "LINSIGHT",
+                          "FATHMM.XF",
+                          "aPC.EpigeneticActive",
+                          "aPC.EpigeneticRepressed",
+                          "aPC.EpigeneticTranscription",
+                          "aPC.Conservation",
+                          "aPC.LocalDiversity",
+                          "aPC.Mappability",
+                          "aPC.TF",
+                          "aPC.Protein")
 
 ## known loci: rs7412 (APOE), rs429358 (APOE), rs35136575 (APOE), rs12151108 (LDLR), rs688 (LDLR), rs6511720 (LDLR)
 known_loci <- read.csv("known_loci_info.csv")
+known_loci
 
 ##########################################
-#       load phenotypes and ancestry PCs
+#       load phenotype and ancestry PCs
 ##########################################
 ### phenotype
 pheno <- read.csv("phenotype_LDLR_coding_APOE_noncoding.csv")
@@ -386,11 +420,15 @@ pheno <- dplyr::left_join(pheno,PCs[,2:12],by=c("sample"="id"))
 obj_nullmodel <- fit_nullmodel(Y~gender+super_pop+PC1+PC2+PC3+PC4+PC5+PC6+PC7+PC8+PC9+PC10,
                                data = pheno, kins = NULL, id = "sample",
                                family = gaussian(link = "identity"), verbose=T)
+```
 
+### Gene-Centric Coding Analysis of *LDLR*
+Here we perform gene-centric coding analysis of different functional categories (masks) of the *LDLR* gene. Note that STAARpipeline provides multiple masks for functionally-informed rare variant analysis, including putative loss of function (`plof`), putative loss of function and disruptive missense (`plof_ds`), missense (`missense`), disruptive missense (`disruptive_missense`), synonymous (`synonymous`), protein truncating variants (`ptv`), and protein truncating variants and disruptive missense (`ptv_ds`). In addition, STAARpipeline calculates the *P* value of each mask using STAAR-O, an omnibus test aggregating the multiple annotation-weighted burden test, SKAT and ACAT-V in the STAAR framework.
 
-#####################################################
-#        Gene-Centric Coding: LDLR
-#####################################################
+```{r,Gene-centric coding analysis of LDLR,warning=FALSE,message=FALSE}
+##########################################
+#       Gene-Centric Coding: LDLR
+##########################################
 
 ### run coding mask of LDLR
 gene_name <- "LDLR"
@@ -400,38 +438,77 @@ chr <- 19
 gds.path <- agds_dir
 genofile <- seqOpen(gds.path)
 
-results_coding <- Gene_Centric_Coding(chr=chr,gene_name=gene_name,genofile=genofile,obj_nullmodel=obj_nullmodel,
-                                      rare_maf_cutoff=0.01,rv_num_cutoff=2,
-								                      QC_label=QC_label,variant_type=variant_type,geno_missing_imputation=geno_missing_imputation,
-								                      Annotation_dir=Annotation_dir,Annotation_name_catalog=Annotation_name_catalog,
-								                      Use_annotation_weights=Use_annotation_weights,Annotation_name=Annotation_name)
+results_coding <- Gene_Centric_Coding(chr=chr,
+                                      gene_name=gene_name,
+                                      genofile=genofile,
+                                      obj_nullmodel=obj_nullmodel,
+                                      rare_maf_cutoff=0.01,
+                                      rv_num_cutoff=2,
+                                      QC_label=QC_label,
+                                      variant_type=variant_type,
+                                      geno_missing_imputation=geno_missing_imputation,
+                                      Annotation_dir=Annotation_dir,
+                                      Annotation_name_catalog=Annotation_name_catalog,
+                                      Use_annotation_weights=Use_annotation_weights,
+                                      Annotation_name=Annotation_name)
 
 results_coding
+```
 
+As expected, the STAAR-O *P* value (9.44e-09) for the `plof_ds` mask is the most significant among all masks tested, consistent with the phenotype simulation. We then perform an analytical follow-up using conditional analysis to identify whether the rare variant association signal (`plof_ds` rare variants of *LDLR*) is independent of known single-variant associations by adjusting for the selected known variants near the variant set (for example, in a ±1-Mb window).
+
+```{r,LDLR conditional analysis,warning=FALSE,message=FALSE}
 ## Conditional Analysis
 category <- "plof_ds"								
-results_coding_cond <- Gene_Centric_Coding_cond(chr=chr,gene_name=gene_name,genofile=genofile,obj_nullmodel=obj_nullmodel,category=category,
-                                                known_loci=known_loci,rare_maf_cutoff=0.01,rv_num_cutoff=2,
-								                                QC_label=QC_label,variant_type=variant_type,geno_missing_imputation=geno_missing_imputation,
-								                                Annotation_dir=Annotation_dir,Annotation_name_catalog=Annotation_name_catalog,
-								                                Use_annotation_weights=Use_annotation_weights,Annotation_name=Annotation_name)
+results_coding_cond <- Gene_Centric_Coding_cond(chr=chr,
+                                                gene_name=gene_name,
+                                                genofile=genofile,
+                                                obj_nullmodel=obj_nullmodel,
+                                                category=category,
+                                                known_loci=known_loci,
+                                                rare_maf_cutoff=0.01,
+                                                rv_num_cutoff=2,
+                                                QC_label=QC_label,
+                                                variant_type=variant_type,
+                                                geno_missing_imputation=geno_missing_imputation,
+                                                Annotation_dir=Annotation_dir,
+                                                Annotation_name_catalog=Annotation_name_catalog,
+                                                Use_annotation_weights=Use_annotation_weights,
+                                                Annotation_name=Annotation_name)
 								
 results_coding_cond
+```
 
+The conditional STAAR-O *P* value remains significant, indicating that this rare variant association signal may be independent of known single-variant associations. We then take a closer look at this mask by summarizing individual variants within the mask.
+
+```{r,LDLR variant info,warning=FALSE,message=FALSE}
 ## variants info for summary
-results_coding_info <- Gene_Centric_Coding_Info(category=category,chr=chr,genofile=genofile,obj_nullmodel=obj_nullmodel,gene_name=gene_name,known_loci=known_loci,
-										QC_label=QC_label,variant_type=variant_type,geno_missing_imputation=geno_missing_imputation,
-										Annotation_dir=Annotation_dir,Annotation_name_catalog=Annotation_name_catalog,Annotation_name=Annotation_name_info)
+results_coding_info <- Gene_Centric_Coding_Info(category=category,
+                                                chr=chr,
+                                                genofile=genofile,
+                                                obj_nullmodel=obj_nullmodel,
+                                                gene_name=gene_name,
+                                                known_loci=known_loci,
+                                                QC_label=QC_label,
+                                                variant_type=variant_type,
+                                                geno_missing_imputation=geno_missing_imputation,
+                                                Annotation_dir=Annotation_dir,
+                                                Annotation_name_catalog=Annotation_name_catalog,
+                                                Annotation_name=Annotation_name_info)
 		
 dim(results_coding_info)
-# [1] 17 33						
 head(results_coding_info)
 
 seqClose(genofile)
-								
-########################################################
-#        Gene-Centric Noncoding: APOE
-########################################################
+```
+
+### Gene-Centric Noncoding Analysis of *APOE*
+Here we perform gene-centric noncoding analysis of different functional categories (masks) of the *APOE* gene. Note that STAARpipeline provides multiple masks for functionally-informed rare variant analysis, including upstream region (`upstream`), downstream region (`downstream`), untranslated region (`UTR`), promoter rare variants overlaid with cap analysis of gene expression (CAGE) sites (`promoter_CAGE`), promoter rare variants overlaid with DNase hypersensitivity (DHS) sites (`promoter_DHS`), enhancer rare variants overlaid with cap analysis of gene expression sites (`enhancer_CAGE`), and enhancer rare variants overlaid with DNase hypersensitivity sites (`enhancer_DHS`). In addition, STAARpipeline performs analysis of rare variants in noncoding RNA (ncRNA) genes. For each mask, STAARpipeline calculates the *P* value using STAAR-O, an omnibus test aggregating the multiple annotation-weighted burden test, SKAT and ACAT-V in the STAAR framework.
+
+```{r,Gene-centric noncoding analysis of APOE,warning=FALSE,message=FALSE}			
+##########################################
+#       Gene-Centric Noncoding: APOE
+##########################################
 
 ### run noncoding mask of APOE
 gene_name <- "APOE"
@@ -441,41 +518,78 @@ chr <- 19
 gds.path <- agds_dir
 genofile <- seqOpen(gds.path)
 
-results_noncoding <- Gene_Centric_Noncoding(chr=chr,gene_name=gene_name,genofile=genofile,obj_nullmodel=obj_nullmodel,
-                                            rare_maf_cutoff=0.01,rv_num_cutoff=2,
-								                            QC_label=QC_label,variant_type=variant_type,geno_missing_imputation=geno_missing_imputation,
-								                            Annotation_dir=Annotation_dir,Annotation_name_catalog=Annotation_name_catalog,
-								                            Use_annotation_weights=Use_annotation_weights,Annotation_name=Annotation_name)
+results_noncoding <- Gene_Centric_Noncoding(chr=chr,
+                                            gene_name=gene_name,
+                                            genofile=genofile,
+                                            obj_nullmodel=obj_nullmodel,
+                                            rare_maf_cutoff=0.01,
+                                            rv_num_cutoff=2,
+                                            QC_label=QC_label,
+                                            variant_type=variant_type,
+                                            geno_missing_imputation=geno_missing_imputation,
+                                            Annotation_dir=Annotation_dir,
+                                            Annotation_name_catalog=Annotation_name_catalog,
+                                            Use_annotation_weights=Use_annotation_weights,
+                                            Annotation_name=Annotation_name)
 
 results_noncoding
+```
 
+As expected, the STAAR-O *P* value (1.71e-08) for the `enhancer_DHS` mask is the most significant among all masks tested, consistent with the phenotype simulation. We then perform an analytical follow-up using conditional analysis to identify whether the rare variant association signal (`enhancer_DHS` rare variants of *APOE*) is independent of known single-variant associations by adjusting for the selected known variants near the variant set (for example, in a ±1-Mb window).
+
+```{r,APOE conditional analysis,warning=FALSE,message=FALSE}
 ## Conditional Analysis
 category <- "enhancer_DHS"								
-results_noncoding_cond <- Gene_Centric_Noncoding_cond(chr=chr,gene_name=gene_name,genofile=genofile,obj_nullmodel=obj_nullmodel,category=category,
-                                                      known_loci=known_loci,rare_maf_cutoff=0.01,rv_num_cutoff=2,
-								                                      QC_label=QC_label,variant_type=variant_type,geno_missing_imputation=geno_missing_imputation,
-								                                      Annotation_dir=Annotation_dir,Annotation_name_catalog=Annotation_name_catalog,
-								                                      Use_annotation_weights=Use_annotation_weights,Annotation_name=Annotation_name)
+results_noncoding_cond <- Gene_Centric_Noncoding_cond(chr=chr,
+                                                      gene_name=gene_name,
+                                                      genofile=genofile,
+                                                      obj_nullmodel=obj_nullmodel,
+                                                      category=category,
+                                                      known_loci=known_loci,
+                                                      rare_maf_cutoff=0.01,
+                                                      rv_num_cutoff=2,
+                                                      QC_label=QC_label,
+                                                      variant_type=variant_type,
+                                                      geno_missing_imputation=geno_missing_imputation,
+                                                      Annotation_dir=Annotation_dir,
+                                                      Annotation_name_catalog=Annotation_name_catalog,
+                                                      Use_annotation_weights=Use_annotation_weights,
+                                                      Annotation_name=Annotation_name)
 
 results_noncoding_cond
-								
+```
+
+The conditional STAAR-O *P* value remains significant, indicating that this rare variant association signal may be independent of known single-variant associations. We then take a closer look at this mask by summarizing individual variants within the mask.
+
+```{r,APOE variant info,warning=FALSE,message=FALSE}
 ## variants info for summary
-results_noncoding_info <- Gene_Centric_Noncoding_Info(category=category,chr=chr,genofile=genofile,obj_nullmodel=obj_nullmodel,gene_name=gene_name,known_loci=known_loci,
-										                                  QC_label=QC_label,variant_type=variant_type,geno_missing_imputation=geno_missing_imputation,
-										                                  Annotation_dir=Annotation_dir,Annotation_name_catalog=Annotation_name_catalog,Annotation_name=Annotation_name_info)
+results_noncoding_info <- Gene_Centric_Noncoding_Info(category=category,
+                                                      chr=chr,
+                                                      genofile=genofile,
+                                                      obj_nullmodel=obj_nullmodel,
+                                                      gene_name=gene_name,
+                                                      known_loci=known_loci,
+                                                      QC_label=QC_label,
+                                                      variant_type=variant_type,
+                                                      geno_missing_imputation=geno_missing_imputation,
+                                                      Annotation_dir=Annotation_dir,
+                                                      Annotation_name_catalog=Annotation_name_catalog,
+                                                      Annotation_name=Annotation_name_info)
 
 dim(results_noncoding_info)
-# [1] 50 33						
 head(results_noncoding_info)
 								
 seqClose(genofile)
 ```
 
-## Rare Variant Meta-Analysis
+## Rare Variant Meta-Analysis using MetaSTAARlite
 
-Using estimated effect sizes from rare variant analyses, we can conduct rare variant meta-analysis from multiple biobanks. For illustrative purposes, we will use summary statistics from different population subsets of the 1000G cohort. First, we estimate the effect sizes using MetaSTAARlite. 
+![MetaSTAARlite workflow](MetaSTAARlite_workflow.jpg)
 
-```{r, Rare Variant Meta-Analysis Summary Statistics with MetaSTAARlite,warning=FALSE,message=FALSE}
+### MetaSTAARlite Set-Up
+Finally, we demonstrate an example of conducting rare variant meta-analysis from multiple biobanks/studies using the estimated rare variant summary statistics from MetaSTAARlite (https://doi.org/10.1101/2025.06.05.25328973). For illustrative purposes, we will use summary statistics from different population subsets (AFR, AMR, EAS, EUR, SAS) of the 1000G cohort. In a more realistic setting, the data from these subsets/studies are stored separately.
+
+```{r,Rare Variant Meta-Analysis with MetaSTAARlite,warning=FALSE,message=FALSE,eval=FALSE}
 ### Setup repository
 setwd(working_dir)
 
@@ -489,7 +603,7 @@ library(MetaSTAAR)
 library(MetaSTAARlite)
 library(Matrix)
 
-## gds file
+## agds file
 agds_dir <- "1kGP_high_coverage_Illumina.chr19.filtered.SNV_INDEL_SV_phased_panel_annotated.gds"
 ## Annotation_dir
 Annotation_dir <- "annotation/info/FunctionalAnnotation"
@@ -513,11 +627,20 @@ length(phenotype.id)
 ## Use_annotation_weights
 Use_annotation_weights <- TRUE
 ## Annotation name (for variant weighting using the MetaSTAAR method)
-Annotation_name <- c("CADD","LINSIGHT","FATHMM.XF","aPC.EpigeneticActive","aPC.EpigeneticRepressed","aPC.EpigeneticTranscription",
-                     "aPC.Conservation","aPC.LocalDiversity","aPC.Mappability","aPC.TF","aPC.Protein")
+Annotation_name <- c("CADD",
+                     "LINSIGHT",
+                     "FATHMM.XF",
+                     "aPC.EpigeneticActive",
+                     "aPC.EpigeneticRepressed",
+                     "aPC.EpigeneticTranscription",
+                     "aPC.Conservation",
+                     "aPC.LocalDiversity",
+                     "aPC.Mappability",
+                     "aPC.TF",
+                     "aPC.Protein")
 
 ##########################################
-#       load phenotypes and ancestry PCs
+#       load phenotype and ancestry PCs
 ##########################################
 ### phenotype
 pheno <- read.csv("phenotype_LDLR_coding_APOE_noncoding.csv")
@@ -530,27 +653,34 @@ pheno <- dplyr::left_join(pheno,PCs[,2:12],by=c("sample"="id"))
 #       fit null model for each "study"
 ##########################################
 obj_nullmodel_AFR <- fit_nullmodel(Y~gender+PC1+PC2+PC3+PC4+PC5+PC6+PC7+PC8+PC9+PC10,
-                                   data = pheno[pheno$super_pop=="AFR",], kins = NULL, id = "sample",
+                                   data = pheno[pheno$super_pop=="AFR",],
+                                   kins = NULL, id = "sample",
                                    family = gaussian(link = "identity"), verbose=T)
 obj_nullmodel_AMR <- fit_nullmodel(Y~gender+PC1+PC2+PC3+PC4+PC5+PC6+PC7+PC8+PC9+PC10,
-                                   data = pheno[pheno$super_pop=="AMR",], kins = NULL, id = "sample",
+                                   data = pheno[pheno$super_pop=="AMR",],
+                                   kins = NULL, id = "sample",
                                    family = gaussian(link = "identity"), verbose=T)
 obj_nullmodel_EAS <- fit_nullmodel(Y~gender+PC1+PC2+PC3+PC4+PC5+PC6+PC7+PC8+PC9+PC10,
-                                   data = pheno[pheno$super_pop=="EAS",], kins = NULL, id = "sample",
+                                   data = pheno[pheno$super_pop=="EAS",],
+                                   kins = NULL, id = "sample",
                                    family = gaussian(link = "identity"), verbose=T)
 obj_nullmodel_EUR <- fit_nullmodel(Y~gender+PC1+PC2+PC3+PC4+PC5+PC6+PC7+PC8+PC9+PC10,
-                                   data = pheno[pheno$super_pop=="EUR",], kins = NULL, id = "sample",
+                                   data = pheno[pheno$super_pop=="EUR",],
+                                   kins = NULL, id = "sample",
                                    family = gaussian(link = "identity"), verbose=T)
 obj_nullmodel_SAS <- fit_nullmodel(Y~gender+PC1+PC2+PC3+PC4+PC5+PC6+PC7+PC8+PC9+PC10,
-                                   data = pheno[pheno$super_pop=="SAS",], kins = NULL, id = "sample",
+                                   data = pheno[pheno$super_pop=="SAS",],
+                                   kins = NULL, id = "sample",
                                    family = gaussian(link = "identity"), verbose=T)
+```
 
+### Generate Rare Variant Summary Statistics for Each Participating Study
+First, we generate and store the rare variant summary statistics for each participating study, including the score statistics and sparse covariance (also called LD) matrices, using the `worker` step from MetaSTAARlite.
 
-#####################################################
-#        For each study, generate rare variant
-#        summary statistics using MetaSTAARlite worker
-#        Gene-Centric Coding: LDLR
-#####################################################
+```{r,Generate Rare Variant Summary Statistics with MetaSTAARlite worker,warning=FALSE,message=FALSE,eval=FALSE}
+##########################################
+#       Gene-Centric Coding: LDLR
+##########################################
 
 ### run coding mask of LDLR
 gene_name <- "LDLR"
@@ -565,11 +695,18 @@ genes <- genes_info
 ## AFR
 coding_sumstat <- list()
 coding_cov <- list()
-results_coding_AFR <- coding_MetaSTAARlite_worker(chr=chr,gene_name=gene_name,genofile=genofile,obj_nullmodel=obj_nullmodel_AFR,gene=genes,
+results_coding_AFR <- coding_MetaSTAARlite_worker(chr=chr,
+                                                  gene_name=gene_name,
+                                                  genofile=genofile,
+                                                  obj_nullmodel=obj_nullmodel_AFR,
+                                                  gene=genes,
                                                   cov_maf_cutoff=0.05,
-                                                  QC_label=QC_label,variant_type=variant_type,
-                                                  Annotation_dir=Annotation_dir,Annotation_name_catalog=Annotation_name_catalog,
-                                                  Use_annotation_weights=Use_annotation_weights,Annotation_name=Annotation_name)
+                                                  QC_label=QC_label,
+                                                  variant_type=variant_type,
+                                                  Annotation_dir=Annotation_dir,
+                                                  Annotation_name_catalog=Annotation_name_catalog,
+                                                  Use_annotation_weights=Use_annotation_weights,
+                                                  Annotation_name=Annotation_name)
 
 coding_sumstat[[gene_name]] <- results_coding_AFR$summary_stat_list
 coding_cov[[gene_name]] <- results_coding_AFR$GTSinvG_rare_list
@@ -580,11 +717,18 @@ save(coding_cov,file="AFR_LDLR_coding_cov.Rdata",compress = "xz")
 ## AMR
 coding_sumstat <- list()
 coding_cov <- list()
-results_coding_AMR <- coding_MetaSTAARlite_worker(chr=chr,gene_name=gene_name,genofile=genofile,obj_nullmodel=obj_nullmodel_AMR,gene=genes,
+results_coding_AMR <- coding_MetaSTAARlite_worker(chr=chr,
+                                                  gene_name=gene_name,
+                                                  genofile=genofile,
+                                                  obj_nullmodel=obj_nullmodel_AMR,
+                                                  gene=genes,
                                                   cov_maf_cutoff=0.05,
-                                                  QC_label=QC_label,variant_type=variant_type,
-                                                  Annotation_dir=Annotation_dir,Annotation_name_catalog=Annotation_name_catalog,
-                                                  Use_annotation_weights=Use_annotation_weights,Annotation_name=Annotation_name)
+                                                  QC_label=QC_label,
+                                                  variant_type=variant_type,
+                                                  Annotation_dir=Annotation_dir,
+                                                  Annotation_name_catalog=Annotation_name_catalog,
+                                                  Use_annotation_weights=Use_annotation_weights,
+                                                  Annotation_name=Annotation_name)
 
 coding_sumstat[[gene_name]] <- results_coding_AMR$summary_stat_list
 coding_cov[[gene_name]] <- results_coding_AMR$GTSinvG_rare_list
@@ -595,11 +739,18 @@ save(coding_cov,file="AMR_LDLR_coding_cov.Rdata",compress = "xz")
 ## EAS
 coding_sumstat <- list()
 coding_cov <- list()
-results_coding_EAS <- coding_MetaSTAARlite_worker(chr=chr,gene_name=gene_name,genofile=genofile,obj_nullmodel=obj_nullmodel_EAS,gene=genes,
+results_coding_EAS <- coding_MetaSTAARlite_worker(chr=chr,
+                                                  gene_name=gene_name,
+                                                  genofile=genofile,
+                                                  obj_nullmodel=obj_nullmodel_EAS,
+                                                  gene=genes,
                                                   cov_maf_cutoff=0.05,
-                                                  QC_label=QC_label,variant_type=variant_type,
-                                                  Annotation_dir=Annotation_dir,Annotation_name_catalog=Annotation_name_catalog,
-                                                  Use_annotation_weights=Use_annotation_weights,Annotation_name=Annotation_name)
+                                                  QC_label=QC_label,
+                                                  variant_type=variant_type,
+                                                  Annotation_dir=Annotation_dir,
+                                                  Annotation_name_catalog=Annotation_name_catalog,
+                                                  Use_annotation_weights=Use_annotation_weights,
+                                                  Annotation_name=Annotation_name)
 
 coding_sumstat[[gene_name]] <- results_coding_EAS$summary_stat_list
 coding_cov[[gene_name]] <- results_coding_EAS$GTSinvG_rare_list
@@ -610,11 +761,18 @@ save(coding_cov,file="EAS_LDLR_coding_cov.Rdata",compress = "xz")
 ## EUR
 coding_sumstat <- list()
 coding_cov <- list()
-results_coding_EUR <- coding_MetaSTAARlite_worker(chr=chr,gene_name=gene_name,genofile=genofile,obj_nullmodel=obj_nullmodel_EUR,gene=genes,
+results_coding_EUR <- coding_MetaSTAARlite_worker(chr=chr,
+                                                  gene_name=gene_name,
+                                                  genofile=genofile,
+                                                  obj_nullmodel=obj_nullmodel_EUR,
+                                                  gene=genes,
                                                   cov_maf_cutoff=0.05,
-                                                  QC_label=QC_label,variant_type=variant_type,
-                                                  Annotation_dir=Annotation_dir,Annotation_name_catalog=Annotation_name_catalog,
-                                                  Use_annotation_weights=Use_annotation_weights,Annotation_name=Annotation_name)
+                                                  QC_label=QC_label,
+                                                  variant_type=variant_type,
+                                                  Annotation_dir=Annotation_dir,
+                                                  Annotation_name_catalog=Annotation_name_catalog,
+                                                  Use_annotation_weights=Use_annotation_weights,
+                                                  Annotation_name=Annotation_name)
 
 coding_sumstat[[gene_name]] <- results_coding_EUR$summary_stat_list
 coding_cov[[gene_name]] <- results_coding_EUR$GTSinvG_rare_list
@@ -625,11 +783,18 @@ save(coding_cov,file="EUR_LDLR_coding_cov.Rdata",compress = "xz")
 ## SAS
 coding_sumstat <- list()
 coding_cov <- list()
-results_coding_SAS <- coding_MetaSTAARlite_worker(chr=chr,gene_name=gene_name,genofile=genofile,obj_nullmodel=obj_nullmodel_SAS,gene=genes,
+results_coding_SAS <- coding_MetaSTAARlite_worker(chr=chr,
+                                                  gene_name=gene_name,
+                                                  genofile=genofile,
+                                                  obj_nullmodel=obj_nullmodel_SAS,
+                                                  gene=genes,
                                                   cov_maf_cutoff=0.05,
-                                                  QC_label=QC_label,variant_type=variant_type,
-                                                  Annotation_dir=Annotation_dir,Annotation_name_catalog=Annotation_name_catalog,
-                                                  Use_annotation_weights=Use_annotation_weights,Annotation_name=Annotation_name)
+                                                  QC_label=QC_label,
+                                                  variant_type=variant_type,
+                                                  Annotation_dir=Annotation_dir,
+                                                  Annotation_name_catalog=Annotation_name_catalog,
+                                                  Use_annotation_weights=Use_annotation_weights,
+                                                  Annotation_name=Annotation_name)
 
 coding_sumstat[[gene_name]] <- results_coding_SAS$summary_stat_list
 coding_cov[[gene_name]] <- results_coding_SAS$GTSinvG_rare_list
@@ -639,11 +804,9 @@ save(coding_cov,file="SAS_LDLR_coding_cov.Rdata",compress = "xz")
 
 seqClose(genofile)
 
-########################################################
-#.       For each study, generate rare variant
-#        summary statistics using MetaSTAARlite worker
-#        Gene-Centric Noncoding: APOE 
-########################################################
+##########################################
+#       Gene-Centric Noncoding: APOE
+##########################################
 
 ### run noncoding mask of APOE
 gene_name <- "APOE"
@@ -656,11 +819,17 @@ genofile <- seqOpen(gds.path)
 ## AFR
 noncoding_sumstat <- list()
 noncoding_cov <- list()
-results_noncoding_AFR <- noncoding_MetaSTAARlite_worker(chr=chr,gene_name=gene_name,genofile=genofile,obj_nullmodel=obj_nullmodel_AFR,
+results_noncoding_AFR <- noncoding_MetaSTAARlite_worker(chr=chr,
+                                                        gene_name=gene_name,
+                                                        genofile=genofile,
+                                                        obj_nullmodel=obj_nullmodel_AFR,
                                                         cov_maf_cutoff=0.05,
-                                                        QC_label=QC_label,variant_type=variant_type,
-                                                        Annotation_dir=Annotation_dir,Annotation_name_catalog=Annotation_name_catalog,
-                                                        Use_annotation_weights=Use_annotation_weights,Annotation_name=Annotation_name)
+                                                        QC_label=QC_label,
+                                                        variant_type=variant_type,
+                                                        Annotation_dir=Annotation_dir,
+                                                        Annotation_name_catalog=Annotation_name_catalog,
+                                                        Use_annotation_weights=Use_annotation_weights,
+                                                        Annotation_name=Annotation_name)
 
 noncoding_sumstat[[gene_name]] <- results_noncoding_AFR$summary_stat_list
 noncoding_cov[[gene_name]] <- results_noncoding_AFR$GTSinvG_rare_list
@@ -671,11 +840,17 @@ save(noncoding_cov,file="AFR_APOE_noncoding_cov.Rdata",compress = "xz")
 ## AMR
 noncoding_sumstat <- list()
 noncoding_cov <- list()
-results_noncoding_AMR <- noncoding_MetaSTAARlite_worker(chr=chr,gene_name=gene_name,genofile=genofile,obj_nullmodel=obj_nullmodel_AMR,
+results_noncoding_AMR <- noncoding_MetaSTAARlite_worker(chr=chr,
+                                                        gene_name=gene_name,
+                                                        genofile=genofile,
+                                                        obj_nullmodel=obj_nullmodel_AMR,
                                                         cov_maf_cutoff=0.05,
-                                                        QC_label=QC_label,variant_type=variant_type,
-                                                        Annotation_dir=Annotation_dir,Annotation_name_catalog=Annotation_name_catalog,
-                                                        Use_annotation_weights=Use_annotation_weights,Annotation_name=Annotation_name)
+                                                        QC_label=QC_label,
+                                                        variant_type=variant_type,
+                                                        Annotation_dir=Annotation_dir,
+                                                        Annotation_name_catalog=Annotation_name_catalog,
+                                                        Use_annotation_weights=Use_annotation_weights,
+                                                        Annotation_name=Annotation_name)
 
 noncoding_sumstat[[gene_name]] <- results_noncoding_AMR$summary_stat_list
 noncoding_cov[[gene_name]] <- results_noncoding_AMR$GTSinvG_rare_list
@@ -686,11 +861,17 @@ save(noncoding_cov,file="AMR_APOE_noncoding_cov.Rdata",compress = "xz")
 ## EAS
 noncoding_sumstat <- list()
 noncoding_cov <- list()
-results_noncoding_EAS <- noncoding_MetaSTAARlite_worker(chr=chr,gene_name=gene_name,genofile=genofile,obj_nullmodel=obj_nullmodel_EAS,
+results_noncoding_EAS <- noncoding_MetaSTAARlite_worker(chr=chr,
+                                                        gene_name=gene_name,
+                                                        genofile=genofile,
+                                                        obj_nullmodel=obj_nullmodel_EAS,
                                                         cov_maf_cutoff=0.05,
-                                                        QC_label=QC_label,variant_type=variant_type,
-                                                        Annotation_dir=Annotation_dir,Annotation_name_catalog=Annotation_name_catalog,
-                                                        Use_annotation_weights=Use_annotation_weights,Annotation_name=Annotation_name)
+                                                        QC_label=QC_label,
+                                                        variant_type=variant_type,
+                                                        Annotation_dir=Annotation_dir,
+                                                        Annotation_name_catalog=Annotation_name_catalog,
+                                                        Use_annotation_weights=Use_annotation_weights,
+                                                        Annotation_name=Annotation_name)
 
 noncoding_sumstat[[gene_name]] <- results_noncoding_EAS$summary_stat_list
 noncoding_cov[[gene_name]] <- results_noncoding_EAS$GTSinvG_rare_list
@@ -701,11 +882,17 @@ save(noncoding_cov,file="EAS_APOE_noncoding_cov.Rdata",compress = "xz")
 ## EUR
 noncoding_sumstat <- list()
 noncoding_cov <- list()
-results_noncoding_EUR <- noncoding_MetaSTAARlite_worker(chr=chr,gene_name=gene_name,genofile=genofile,obj_nullmodel=obj_nullmodel_EUR,
+results_noncoding_EUR <- noncoding_MetaSTAARlite_worker(chr=chr,
+                                                        gene_name=gene_name,
+                                                        genofile=genofile,
+                                                        obj_nullmodel=obj_nullmodel_EUR,
                                                         cov_maf_cutoff=0.05,
-                                                        QC_label=QC_label,variant_type=variant_type,
-                                                        Annotation_dir=Annotation_dir,Annotation_name_catalog=Annotation_name_catalog,
-                                                        Use_annotation_weights=Use_annotation_weights,Annotation_name=Annotation_name)
+                                                        QC_label=QC_label,
+                                                        variant_type=variant_type,
+                                                        Annotation_dir=Annotation_dir,
+                                                        Annotation_name_catalog=Annotation_name_catalog,
+                                                        Use_annotation_weights=Use_annotation_weights,
+                                                        Annotation_name=Annotation_name)
 
 noncoding_sumstat[[gene_name]] <- results_noncoding_EUR$summary_stat_list
 noncoding_cov[[gene_name]] <- results_noncoding_EUR$GTSinvG_rare_list
@@ -716,11 +903,17 @@ save(noncoding_cov,file="EUR_APOE_noncoding_cov.Rdata",compress = "xz")
 ## SAS
 noncoding_sumstat <- list()
 noncoding_cov <- list()
-results_noncoding_SAS <- noncoding_MetaSTAARlite_worker(chr=chr,gene_name=gene_name,genofile=genofile,obj_nullmodel=obj_nullmodel_SAS,
+results_noncoding_SAS <- noncoding_MetaSTAARlite_worker(chr=chr,
+                                                        gene_name=gene_name,
+                                                        genofile=genofile,
+                                                        obj_nullmodel=obj_nullmodel_SAS,
                                                         cov_maf_cutoff=0.05,
-                                                        QC_label=QC_label,variant_type=variant_type,
-                                                        Annotation_dir=Annotation_dir,Annotation_name_catalog=Annotation_name_catalog,
-                                                        Use_annotation_weights=Use_annotation_weights,Annotation_name=Annotation_name)
+                                                        QC_label=QC_label,
+                                                        variant_type=variant_type,
+                                                        Annotation_dir=Annotation_dir,
+                                                        Annotation_name_catalog=Annotation_name_catalog,
+                                                        Use_annotation_weights=Use_annotation_weights,
+                                                        Annotation_name=Annotation_name)
 
 noncoding_sumstat[[gene_name]] <- results_noncoding_SAS$summary_stat_list
 noncoding_cov[[gene_name]] <- results_noncoding_SAS$GTSinvG_rare_list
@@ -731,9 +924,10 @@ save(noncoding_cov,file="SAS_APOE_noncoding_cov.Rdata",compress = "xz")
 seqClose(genofile)
 ```
 
-Now using the ancestry-specific summary statistics we can perform rare variant meta-analysis for LDLR and APOE in chromosome 19.
+### Gene-Centric Coding Meta-Analysis of *LDLR*
+Now using the ancestry-specific summary statistics, we can perform rare variant meta-analysis for *LDLR* coding masks and *APOE* noncoding masks in chromosome 19 using MetaSTAARlite. Same as STAARpipeline, MetaSTAARlite also provides multiple masks for functionally-informed rare variant meta-analysis, including putative loss of function (`plof`), putative loss of function and disruptive missense (`plof_ds`), missense (`missense`), disruptive missense (`disruptive_missense`), synonymous (`synonymous`), protein truncating variants (`ptv`), and protein truncating variants and disruptive missense (`ptv_ds`). In addition, MetaSTAARlite calculates the *P* value of each mask using MetaSTAAR-O, an omnibus test aggregating the multiple annotation-weighted meta-analytic burden test (`Burden-MS`), SKAT (`SKAT-MS`) and ACAT-V (`ACAT-V-MS`) in the MetaSTAAR framework.
 
-```{r, Rare Variant Meta-Analysis with MetaSTAARlite,warning=FALSE,message=FALSE}
+```{r,Gene-centric coding meta-analysis of LDLR,warning=FALSE,message=FALSE}
 setwd(working_dir)
 
 ### load required package
@@ -746,9 +940,9 @@ library(MetaSTAAR)
 library(MetaSTAARlite)
 library(Matrix)
 
-###########################################################
+#####################################################
 #           User Input
-###########################################################
+#####################################################
 ## Sample sizes of participating studies
 sample.sizes <- c(661,347,504,503,489)
 
@@ -760,13 +954,22 @@ cov_maf_cutoff <- c(0.05,0.05,0.05,0.05,0.05)
 ## Use_annotation_weights
 Use_annotation_weights <- TRUE
 ## Annotation name (for variant weighting using the MetaSTAAR method)
-Annotation_name <- c("CADD","LINSIGHT","FATHMM.XF","aPC.EpigeneticActive","aPC.EpigeneticRepressed","aPC.EpigeneticTranscription",
-                     "aPC.Conservation","aPC.LocalDiversity","aPC.Mappability","aPC.TF","aPC.Protein")
+Annotation_name <- c("CADD",
+                     "LINSIGHT",
+                     "FATHMM.XF",
+                     "aPC.EpigeneticActive",
+                     "aPC.EpigeneticRepressed",
+                     "aPC.EpigeneticTranscription",
+                     "aPC.Conservation",
+                     "aPC.LocalDiversity",
+                     "aPC.Mappability",
+                     "aPC.TF",
+                     "aPC.Protein")
 
 
 #####################################################
-#        Rare variant meta-analysis using MetaSTAARlite
-#        Gene-Centric Coding: LDLR
+#   Rare variant meta-analysis using MetaSTAARlite
+#   Gene-Centric Coding: LDLR
 #####################################################
 chr <- 19
 
@@ -794,19 +997,44 @@ coding_sumstat_gene_list <- lapply(sumstat.file.path, function(x) {
 coding_cov_gene_list <- lapply(cov.file.path, function(x) {
   coding_cov_list[[paste0(x,".coding_cov")]][[gene_name]]
 })
-results_coding_meta <- coding_MetaSTAARlite(chr=chr,gene_name=gene_name,genes=genes,
-                                            sample.sizes=sample.sizes,coding_sumstat_gene_list=coding_sumstat_gene_list,
+results_coding_meta <- coding_MetaSTAARlite(chr=chr,
+                                            gene_name=gene_name,
+                                            genes=genes,
+                                            sample.sizes=sample.sizes,
+                                            coding_sumstat_gene_list=coding_sumstat_gene_list,
                                             coding_cov_gene_list=coding_cov_gene_list,
                                             cov_maf_cutoff=cov_maf_cutoff,
-                                            rare_maf_cutoff=0.01,rv_num_cutoff=2,
+                                            rare_maf_cutoff=0.01,
+                                            rv_num_cutoff=2,
                                             variant_type=variant_type,
-                                            Use_annotation_weights=Use_annotation_weights,Annotation_name=Annotation_name)
+                                            Use_annotation_weights=Use_annotation_weights,
+                                            Annotation_name=Annotation_name)
 results_coding_meta
+```
 
-########################################################
-#        Rare variant meta-analysis using MetaSTAARlite
-#        Gene-Centric Noncoding: APOE 
-########################################################
+Comparing the results from pooled analysis using STAARpipeline and meta-analysis using MetaSTAARlite of *LDLR*, we can see that for the same mask, both methods deliver very similar results, demonstrating that the statistical power of meta-analysis is (under plausible conditions) asymptotically equivalent to that of pooled analysis.
+```{r,Comparison of STAARpipeline and MetaSTAARlite for LDLR,warning=FALSE,message=FALSE}
+rbind(results_coding[["plof"]][,c("Gene name","Chr","Category","#SNV","STAAR-O")],
+      results_coding[["plof_ds"]][,c("Gene name","Chr","Category","#SNV","STAAR-O")],
+      results_coding[["missense"]][,c("Gene name","Chr","Category","#SNV","STAAR-O")],
+      results_coding[["disruptive_missense"]][,c("Gene name","Chr","Category","#SNV","STAAR-O")],
+      results_coding[["synonymous"]][,c("Gene name","Chr","Category","#SNV","STAAR-O")])
+
+rbind(results_coding_meta[["plof"]][,c("Gene name","Chr","Category","#SNV","MetaSTAAR-O")],
+      results_coding_meta[["plof_ds"]][,c("Gene name","Chr","Category","#SNV","MetaSTAAR-O")],
+      results_coding_meta[["missense"]][,c("Gene name","Chr","Category","#SNV","MetaSTAAR-O")],
+      results_coding_meta[["disruptive_missense"]][,c("Gene name","Chr","Category","#SNV","MetaSTAAR-O")],
+      results_coding_meta[["synonymous"]][,c("Gene name","Chr","Category","#SNV","MetaSTAAR-O")])
+```
+
+### Gene-Centric Noncoding Meta-Analysis of *APOE*
+Here we perform gene-centric noncoding meta-analysis of different functional categories (masks) of the *APOE* gene. Same as STAARpipeline, MetaSTAARlite also provides multiple masks for functionally-informed rare variant meta-analysis, including upstream region (`upstream`), downstream region (`downstream`), untranslated region (`UTR`), promoter rare variants overlaid with cap analysis of gene expression (CAGE) sites (`promoter_CAGE`), promoter rare variants overlaid with DNase hypersensitivity (DHS) sites (`promoter_DHS`), enhancer rare variants overlaid with cap analysis of gene expression sites (`enhancer_CAGE`), and enhancer rare variants overlaid with DNase hypersensitivity sites (`enhancer_DHS`). In addition, MetaSTAARlite performs analysis of rare variants in noncoding RNA (ncRNA) genes. For each mask, MetaSTAARlite calculates the *P* value using MetaSTAAR-O, an omnibus test aggregating the multiple annotation-weighted meta-analytic burden test (`Burden-MS`), SKAT (`SKAT-MS`) and ACAT-V (`ACAT-V-MS`) in the MetaSTAAR framework.
+
+```{r,Gene-centric noncoding meta-analysis of APOE,warning=FALSE,message=FALSE}
+#####################################################
+#   Rare variant meta-analysis using MetaSTAARlite
+#   Gene-Centric Noncoding: APOE 
+#####################################################
 chr <- 19
 
 ### run noncoding mask of APOE
@@ -831,13 +1059,36 @@ noncoding_sumstat_gene_list <- lapply(sumstat.file.path, function(x) {
 noncoding_cov_gene_list <- lapply(cov.file.path, function(x) {
   noncoding_cov_list[[paste0(x,".noncoding_cov")]][[gene_name]]
 })
-results_noncoding_meta <- noncoding_MetaSTAARlite(chr=chr,gene_name=gene_name,
-                                                  sample.sizes=sample.sizes,noncoding_sumstat_gene_list=noncoding_sumstat_gene_list,
+results_noncoding_meta <- noncoding_MetaSTAARlite(chr=chr,
+                                                  gene_name=gene_name,
+                                                  sample.sizes=sample.sizes,
+                                                  noncoding_sumstat_gene_list=noncoding_sumstat_gene_list,
                                                   noncoding_cov_gene_list=noncoding_cov_gene_list,
                                                   cov_maf_cutoff=cov_maf_cutoff,
-                                                  rare_maf_cutoff=0.01,rv_num_cutoff=2,
+                                                  rare_maf_cutoff=0.01,
+                                                  rv_num_cutoff=2,
                                                   variant_type=variant_type,
-                                                  Use_annotation_weights=Use_annotation_weights,Annotation_name=Annotation_name)
+                                                  Use_annotation_weights=Use_annotation_weights,
+                                                  Annotation_name=Annotation_name)
 results_noncoding_meta
 ```
 
+Comparing the results from pooled analysis using STAARpipeline and meta-analysis using MetaSTAARlite of *APOE*, we can see that for the same mask, both methods deliver very similar results, demonstrating that the statistical power of meta-analysis is (under plausible conditions) asymptotically equivalent to that of pooled analysis.
+
+```{r,Comparison of STAARpipeline and MetaSTAARlite for APOE,warning=FALSE,message=FALSE}
+rbind(results_noncoding[["upstream"]][,c("Gene name","Chr","Category","#SNV","STAAR-O")],
+      results_noncoding[["downstream"]][,c("Gene name","Chr","Category","#SNV","STAAR-O")],
+      results_noncoding[["UTR"]][,c("Gene name","Chr","Category","#SNV","STAAR-O")],
+      results_noncoding[["promoter_CAGE"]][,c("Gene name","Chr","Category","#SNV","STAAR-O")],
+      results_noncoding[["promoter_DHS"]][,c("Gene name","Chr","Category","#SNV","STAAR-O")],
+      results_noncoding[["enhancer_CAGE"]][,c("Gene name","Chr","Category","#SNV","STAAR-O")],
+      results_noncoding[["enhancer_DHS"]][,c("Gene name","Chr","Category","#SNV","STAAR-O")])
+
+rbind(results_noncoding_meta[["upstream"]][,c("Gene name","Chr","Category","#SNV","MetaSTAAR-O")],
+      results_noncoding_meta[["downstream"]][,c("Gene name","Chr","Category","#SNV","MetaSTAAR-O")],
+      results_noncoding_meta[["UTR"]][,c("Gene name","Chr","Category","#SNV","MetaSTAAR-O")],
+      results_noncoding_meta[["promoter_CAGE"]][,c("Gene name","Chr","Category","#SNV","MetaSTAAR-O")],
+      results_noncoding_meta[["promoter_DHS"]][,c("Gene name","Chr","Category","#SNV","MetaSTAAR-O")],
+      results_noncoding_meta[["enhancer_CAGE"]][,c("Gene name","Chr","Category","#SNV","MetaSTAAR-O")],
+      results_noncoding_meta[["enhancer_DHS"]][,c("Gene name","Chr","Category","#SNV","MetaSTAAR-O")])
+```

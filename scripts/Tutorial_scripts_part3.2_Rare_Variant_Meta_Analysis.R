@@ -24,9 +24,9 @@ library(MetaSTAAR)
 library(MetaSTAARlite)
 library(Matrix)
 
-###########################################################
+#####################################################
 #           User Input
-###########################################################
+#####################################################
 ## Sample sizes of participating studies
 sample.sizes <- c(661,347,504,503,489)
 
@@ -43,8 +43,8 @@ Annotation_name <- c("CADD","LINSIGHT","FATHMM.XF","aPC.EpigeneticActive","aPC.E
 
 
 #####################################################
-#        Rare variant meta-analysis using MetaSTAARlite
-#        Gene-Centric Coding: LDLR
+#   Rare variant meta-analysis using MetaSTAARlite
+#   Gene-Centric Coding: LDLR
 #####################################################
 chr <- 19
 
@@ -81,10 +81,10 @@ results_coding_meta <- coding_MetaSTAARlite(chr=chr,gene_name=gene_name,genes=ge
                                             Use_annotation_weights=Use_annotation_weights,Annotation_name=Annotation_name)
 results_coding_meta
 
-########################################################
-#        Rare variant meta-analysis using MetaSTAARlite
-#        Gene-Centric Noncoding: APOE 
-########################################################
+#####################################################
+#   Rare variant meta-analysis using MetaSTAARlite
+#   Gene-Centric Noncoding: APOE 
+#####################################################
 chr <- 19
 
 ### run noncoding mask of APOE

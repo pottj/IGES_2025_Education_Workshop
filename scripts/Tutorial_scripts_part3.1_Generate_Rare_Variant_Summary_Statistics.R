@@ -24,7 +24,7 @@ library(MetaSTAAR)
 library(MetaSTAARlite)
 library(Matrix)
 
-## gds file
+## agds file
 agds_dir <- "1kGP_high_coverage_Illumina.chr19.filtered.SNV_INDEL_SV_phased_panel_annotated.gds"
 ## Annotation_dir
 Annotation_dir <- "annotation/info/FunctionalAnnotation"
@@ -52,7 +52,7 @@ Annotation_name <- c("CADD","LINSIGHT","FATHMM.XF","aPC.EpigeneticActive","aPC.E
                      "aPC.Conservation","aPC.LocalDiversity","aPC.Mappability","aPC.TF","aPC.Protein")
 
 ##########################################
-#       load phenotypes and ancestry PCs
+#       load phenotype and ancestry PCs
 ##########################################
 ### phenotype
 pheno <- read.csv("phenotype_LDLR_coding_APOE_noncoding.csv")

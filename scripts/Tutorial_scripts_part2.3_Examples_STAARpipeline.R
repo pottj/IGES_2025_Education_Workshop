@@ -22,7 +22,7 @@ library(STAAR)
 library(STAARpipeline)
 library(STAARpipelineSummary)
 
-## gds file
+## agds file
 agds_dir <- "1kGP_high_coverage_Illumina.chr19.filtered.SNV_INDEL_SV_phased_panel_annotated.gds"
 ## Annotation_dir
 Annotation_dir <- "annotation/info/FunctionalAnnotation"
@@ -56,9 +56,10 @@ Annotation_name_info <- c("rs_num","GENCODE.Category","GENCODE.Info","GENCODE.EX
 
 ## known loci: rs7412 (APOE), rs429358 (APOE), rs35136575 (APOE), rs12151108 (LDLR), rs688 (LDLR), rs6511720 (LDLR)
 known_loci <- read.csv("known_loci_info.csv")
+known_loci
 
 ##########################################
-#       load phenotypes and ancestry PCs
+#       load phenotype and ancestry PCs
 ##########################################
 ### phenotype
 pheno <- read.csv("phenotype_LDLR_coding_APOE_noncoding.csv")
@@ -75,9 +76,9 @@ obj_nullmodel <- fit_nullmodel(Y~gender+super_pop+PC1+PC2+PC3+PC4+PC5+PC6+PC7+PC
                                family = gaussian(link = "identity"), verbose=T)
 
 
-#####################################################
-#        Gene-Centric Coding: LDLR
-#####################################################
+##########################################
+#       Gene-Centric Coding: LDLR
+##########################################
 
 ### run coding mask of LDLR
 gene_name <- "LDLR"
@@ -116,9 +117,9 @@ head(results_coding_info)
 
 seqClose(genofile)
 								
-########################################################
-#        Gene-Centric Noncoding: APOE
-########################################################
+##########################################
+#       Gene-Centric Noncoding: APOE
+##########################################
 
 ### run noncoding mask of APOE
 gene_name <- "APOE"
@@ -145,7 +146,7 @@ results_noncoding_cond <- Gene_Centric_Noncoding_cond(chr=chr,gene_name=gene_nam
 								                                      Use_annotation_weights=Use_annotation_weights,Annotation_name=Annotation_name)
 
 results_noncoding_cond
-								
+
 ## variants info for summary
 results_noncoding_info <- Gene_Centric_Noncoding_Info(category=category,chr=chr,genofile=genofile,obj_nullmodel=obj_nullmodel,gene_name=gene_name,known_loci=known_loci,
 										                                  QC_label=QC_label,variant_type=variant_type,geno_missing_imputation=geno_missing_imputation,

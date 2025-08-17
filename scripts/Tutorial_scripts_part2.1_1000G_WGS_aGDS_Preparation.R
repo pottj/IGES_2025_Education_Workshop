@@ -39,7 +39,7 @@ seqVCF2GDS(vcf.fn, out.fn, header = h, genotype.var.name = "GT", info.import=NUL
 ### Functionally annotate 1000G WGS Data GDS files to annotated GDS (aGDS) files
 ### using FAVOR database (https://favor.genohub.org/) and FAVORannotator
 ### The following scripts are used for the favorannotator app in DNAnexus
-### There is also offline scripts for favorannotator available for use:
+### There are also offline scripts for favorannotator available for use:
 ### (https://github.com/xihaoli/STAARpipeline-Tutorial#generate-annotated-gds-agds-file-using-favorannotator)
 
 # Upload 1000G WGS GDS files to DNAnexus RAP Cloud (Drag the files)
@@ -78,7 +78,7 @@ dx run UKB_PRS:/favorannotator \
 --destination=UKB_PRS:/IGES_2025_Education_Workshop/1000G/aGDS --yes
 #-------------------------------------------------------------------
 
-### Adds QC_label with all "PASS" to a post-QC GDS file
+### Adds QC_label with all "PASS" to a post-QC aGDS file (R scripts)
 gds.path <- "1kGP_high_coverage_Illumina.chr19.filtered.SNV_INDEL_SV_phased_panel_annotated.gds"
 genofile <- seqOpen(gds.path, readonly = FALSE)
 #genofile

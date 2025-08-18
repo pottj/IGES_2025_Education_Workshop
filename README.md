@@ -39,11 +39,11 @@ devtools::install_github("li-lab-genetics/MetaSTAARlite",ref="main")
 remotes::install_github("privefl/bigsnpr")
 ```
 
-The data used for this tutorial is available at https://dataverse.harvard.edu/api/access/datafile/11912614. 	
+The data used for this tutorial is available at https://dataverse.harvard.edu/api/access/datafile/11945376. 	
 This contains a tar.gz file with data used in the IGES 2025 Cross Biobank Practical Tutorial. The vcf used in this tutorial to create common variants and agds files is from 1000G (https://doi.org/10.1016/j.cell.2022.08.004) and downloadable at https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/working/20220422_3202_phased_SNV_INDEL_SV/. Unrelated individuals were identified using the panel downloadable from https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/. All other files were created or simulated using the code in the scripts folder.
 
 ```R
-download.file(url = "https://dataverse.harvard.edu/api/access/datafile/11912614",
+download.file(url = "https://dataverse.harvard.edu/api/access/datafile/11945376",
               destfile = "")
 ```
 

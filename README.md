@@ -1,7 +1,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 # IGES 2025 Cross Biobank Practical Tutorials
-This repository contains code used for the tutorial (`IGES_CrossBioBank_PracticalTutorial.Rmd`) as well as scripts used to create the data and test analyses used in the tutorial (`scripts/``).
+This repository contains code used for the tutorial (`IGES_CrossBioBank_PracticalTutorial.Rmd`) as well as scripts used to create the data and test analyses used in the tutorial (`scripts/`).
 
 - All the source data are publicly available;
 - All the source code are open-access;
@@ -40,7 +40,7 @@ remotes::install_github("privefl/bigsnpr")
 ```
 
 The data used for this tutorial is available at https://dataverse.harvard.edu/api/access/datafile/11945376. 	
-This contains a tar.gz file with data used in the IGES 2025 Cross Biobank Practical Tutorial. The vcf used in this tutorial to create common variants and agds files is from 1000G (https://doi.org/10.1016/j.cell.2022.08.004) and downloadable at https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/working/20220422_3202_phased_SNV_INDEL_SV/. Unrelated individuals were identified using the panel downloadable from https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/. All other files were created or simulated using the code in the scripts folder.
+This contains a tar.gz file with data used in the IGES 2025 Cross Biobank Practical Tutorial. The vcf used in this tutorial to create common variants and agds files is from 1000G (https://doi.org/10.1016/j.cell.2022.08.004) and downloadable at https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/working/20220422_3202_phased_SNV_INDEL_SV/. Unrelated individuals were identified using the panel downloadable from https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/. All other files were created or simulated using the code in the `scripts/` folder.
 
 ```R
 download.file(url = "https://dataverse.harvard.edu/api/access/datafile/11945376",

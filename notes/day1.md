@@ -7,3 +7,6 @@
 
 ## Session 2: Methodological advances for Biobank-Based genetic epidemiology 
 
+- Talk A: Reedik Maegi about Estonia Biobank and challenges in biobanking
+- Talk B: Krista Fischer about causal inference in biobanking
+- slides for both talks available 

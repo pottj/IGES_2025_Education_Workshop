@@ -100,3 +100,35 @@
 ## Poster Session 1 (2:55pm - 4:15pm)
 
 ## Session 4: Statistical Modeling (4:15pm - 5:45pm)
+
+### Gillian King: Leveraging a Multi-Population Likelihood Framework for Bayesian Model Uncertainty in PRS Construction (abstract 113) 
+
+- Bayesian!
+- Simulation with 500 SNPs, 10 causal SNPs, and h2=0.1
+
+### Sebastian Sendel: TrACES of Time: A Targeted mRNA Sequencing Approach for Estimating Time-of-Day of Bloodstain Deposition in Forensic Casework (abstract 86) 
+
+- panel of 69 markers + prediction model
+- time as continuous trait: use combination of sin and cos of the 24h clock
+- works, but high SE, so at the moment not good to indicate time, but maybe to exclude time
+
+### Chris Wallace: Why Meta-Analysis Fine-Mapping Can Be Confidently Wrong and How to Fix It (abstract 27) 
+
+- nifty - also kind of the CM talk from a month ago
+
+### Chuan Fu Yap: Framework for Allelic Effect Heterogeneity Assessment in Genome-Wide Association Study Meta-Analyses (abstract 45) 
+
+- many equations - still not sure what the goal is, GxE with E being the PCs?
+- PC scatter plots - with gradients - PC1-3 are important for continental differences
+
+### Merli Koitmäe: Uncovering Genetic Pathways in Type 2 Diabetes Using Genomic Structural Equation Modeling (abstract 85) 
+
+- Genomic SEM - been a while ...
+- SEM needs same ancestry
+- many covariables - merge into latent factors
+
+### Julien St-Pierre: Penalized Generalized Linear Mixed Models for Longitudinal Outcomes in Genetic Association Studies (abstract 60) 
+
+- GMMAT as starting point, but it is only quasi-penalized - problem when want to predict stuff
+- so lets add random effects per measurement by sample
+- "two random slopes" - did not really understand - hope he has a paper/preprint

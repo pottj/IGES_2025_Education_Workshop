@@ -18,12 +18,23 @@
 
 - ... and Consequences for downstream MR
 - lack of replication of microbiome QTL & complex mechanisms of association
-- example about lactose: if you are intolerant, because LCT is not working, but continue to drink milk, your microbiome will start digesting lactose for you! environmental effect
+- example about lactose: if you are intolerant, because _LCT_ is not working, but continue to drink milk, your microbiome will start digesting lactose for you! environmental effect
 - Flemish Gut Flora Project (FGFP)
+- conclusion: do not do MR with microbiome as exposure (maybe as an outcome -> do always reverse MR) 
 
 ### Jakob Woerner: Polygenic Scores in Proteomic Risk Prediction (abstract 43) 
 
+- UKB proteomics 2027 release for all participants & up to 5000 proteins (pharma release 2026)
+- prevalent cases (before baseline), incident cases (after baseline), controls
+- train set: prevalent + controls, test set: incident + controls
+- in general: protein risk scores perform better than the simple polygenetic risk scores
+
 ### Fiona Pantrin: Characterisation of Diverse Global Ancestries Within Participants of the UK Biobank (abstract 58) 
+
+- Most researcher focus on "White British" participants of the UKB - the rest is understudied
+- get ancestry label for each individual
+- try fine-scale ancestry group by IBD
+- outlier: high IBD - Ashkenazi Jewish reference
 
 ## Session 2: Neel Awards (10.20am - 11:50am)
 

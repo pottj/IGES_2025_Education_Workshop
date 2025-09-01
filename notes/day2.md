@@ -74,6 +74,29 @@
 
 ## Session 3: Diverstiy (1:25pm - 2:55pm)
 
+### Keynote Talk - Eleftheria Zeggini: Translational Genomics of Complex Disease
+
+- distracted because of CM away day planning chaos
+
+### Brian L. Browning: Estimating Gene Conversion Rates (abstract 15) 
+
+- IBD again (haven't heard about IBD so many times for long)
+- data used: TopMed (more samples, higher resolution) & deCODE (possible to stratify & identify the direction of conversion) & UKB
+
+### Peyton McClelland: WGS-Based HLA Allele Imputation Quantifies Pleiotropic Associations with Disease-Related Traits (abstract 110) 
+
+- French Canadian, CARTaGENE (n=30,000 with genotypes)
+- IMGT HLA allele database
+
+### Mohamad Saad: High Consanguinity, Underrepresented Populations, and Genome Sequencing for Rare Variant Discoveries (abstract 109) 
+
+- distracted by mails
+- everyone under lipid-lowering medication
+
+### Valentina Rukin: Multi-Ancestral GWAS of GDM and Glycemic Traits During Pregnancy (abstract 57) 
+
+- missed beginning, don't know which data was used
+
 ## Poster Session 1 (2:55pm - 4:15pm)
 
 ## Session 4: Statistical Modeling (4:15pm - 5:45pm)
